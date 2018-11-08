@@ -1,0 +1,62 @@
+android create avd -n <AppSolute> -t <1> -s < WVGA800> --abi x86 [-f -c <~/.titanium/my_avd_api_17.sdcard -c 1024>M
+-avd my_avd_api_17
+Android 4.2.2
+Platform
+17
+2
+HVGA, QVGA, WQVGA400, WQVGA432, WSVGA, WVGA800 (default),  WVGA854, WXGA720, WXGA800, WXGA800-7in
+armeabi-v7a
+Google APIs
+Add-On
+Google Inc.
+3 
+Android + Google APIs
+Android 4.2.2 (API level 17)
+* com.google.android.media.effects (effects.jar)
+Collection of video effects
+* com.android.future.usb.accessory (usb.jar)
+API for USB Accessories
+* com.google.android.maps (maps.jar)
+API for Google Maps
+WVGA854, WQVGA400, WSVGA, WXGA800-7in, WXGA720, HVGA, WQVGA432, WVGA800 (default), QVGA, WXGA800
+armeabi-v7a
+path_to_android_sdk/tools/android avd
+~/.android/avd/<AVD_name>.avd/config.ini
+\Users\<user>\.android\avd\<AVD_name>.avd\config.ini
+40.	disk.dataPartition.size=<size_in_MB>m
+app/bin
+libs/ddmlib/bin
+libs/ddmuilib/bin
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry excluding="Makefile|resources/" kind="src" path="src"/>
+	<classpathentry kind="src" path="src/resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ANDROID_SWT"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ddmlib"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ddmuilib"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/AndroidPrefs"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/SdkStatsService"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>ddms</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+</projectDescription>
+DDMSAPP_LOCAL_DIR := $(call my-dir)
+include $(DDMSAPP_LOCAL_DIR)/etc/Android.mk
+include $(DDMSAPP_LOCAL_DIR)/src/Android.mk
+//device/prebuild/<platform>/swt
