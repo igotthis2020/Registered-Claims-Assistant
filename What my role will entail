@@ -1,0 +1,248 @@
+1.	Auth0
+
+a)	Application  include:
+(i)	Authentication  Token – identifies   the  user  or  the  person  that  is  using  the  application  or  site.
+
+(ii)	 Authentication  Scheme – performs  two  roles:
+•	User  Authentication -  diagnoses  whether  the  calling  user  is  who  they  claim  to  be.
+•	User  Authorisation -  diagnoses  whether  the  user  is  allowed  access  to  make  a  request  to  the  API.
+
+(iii)	Endpoints – checks  the  authentication  token  to  verify  that  it  has  permission  to  call  an  API.
+
+b)	0Auth  purpose – to  prevent  malicious  access  attempts  to  steal  API  projects  created  by  other  developers.
+
+c)	Other  API Key  applications  include:
+
+(i)	The  Security  of  API  Keys
+(ii)	When  to  Use  API  Keys
+(iii)	How  to  Use  API  Keys
+
+ 
+d)	Grant  Type:  JWT  Bearer  Token  Grant  Type.
+
+2.	JSON  protocol:
+
+a)	Authentication 
+b)	Authorization
+c)	Federated  Identity
+d)	Client-side  Sessions  (“stateless” sessions)
+e)	Client-side  Secrets
+
+
+
+
+3.	  Backend  Tasks  and  Duties:
+
+a)	We  process  registered  token (JWT)  claims,  by  verifying  the  e.g.  user  IDs,  emails,  and  “items”  claims  among  others:
+(i)	ID  token
+(ii)	API  Access  token,  and  
+(iii)	Client-side  session  token
+
+b)	We  use  the  signing  and  possibly  encryption  algorithms  to  authenticate  and  protect  the  contents  of  the  session,  considering  that  client-side  data  is  subject  to  tampering.
+
+c)	We  use  JSON  Web  Tokens (JWTs),  by  virtue  of  JSON  Web  Signatures (JWS)  and  JSON  Web  Encryption (JWE),  to  provide  various  types  of  signatures  and  encryption. 
+
+d)	We  restrict,  at  all  costs,  third  party  client-side  scripts  from  harvesting  “items”  claim(s)  in  particular  if  they  are  stored  in  unencrypted  JWTs.
+
+e)	The  sample  below  depicts  a  registered  claim  of:
+
+(i)	the  token  ID  backend  constructs  that  contain  a  new  JWT  with  the  new  item  in  it  and  a  new  signature:
+
+app.get('/protected/add_item', idValidator, cartValidator, (req, res) => {
+         req.cart.items.push(parseInt(req.query.id));
+         
+         const newCart = jwt.sign(req.cart,
+                                                           process.env.AUTH0_CART_SECRET,
+                                                           cartSignJwtOptions);
+
+         res.cookie('cart', newCart, {
+               maxAge: 1000 * 60 * 60
+         });
+
+         res.end();
+
+         console.log(`Item ID ${req.query.id} added to cart.`);
+});
+    
+
+(ii)	the  API  access  token  backend  constructs  below  are  setup  using  express-jwt: 
+
+app.use('/protected', expressJwt({
+        secret: jwksClient.expressJwtSecret(jwksOpts),
+        issuer: process.env.AUTH0_API_ISSUER,
+        audience: process.env.AUTH0_API_AUDIENCE,
+        requestProperty: 'accessToken',
+        getToken: req => {
+                 return req.cookies['access_token'];
+        }
+}));
+
+Both  the  access  token  and  ID  token  are  assigned  by  Auth0  to  our  application  by  setting  a:  client   and  API  endpoint  using  the  Auth0  dashboard.  
+The  above  elements  are  retrieved  using  Auth0  JavaScript  library,  called  by  our  frontend:
+//Auth0 Client ID
+const clientId = "t42WY87weXzepAdUlwMiHYRBQj9qWVAT";
+//Auth0 Domain
+const domain = "speyrott.auth0.com";
+
+const auth0 = new window.auth0.WebAuth({
+          domain: domain,
+          clientID: clientId,
+          audience: '/protected',
+          scope: 'openid profile purchase',
+          responseType: 'id_token token',
+          redirectUri: 'http://localhost:3000/auth/',
+          responseMode: 'form_post'
+});
+
+//(...)
+$('#login-button').on('click', function(event) {
+          auth0.authorize();
+});
+
+
+
+(iii)	The  Auth0  authentication  and  authorization  server  displays  a  login  screen  with  our  settings;  all  requested  tokens  are  then  set  by  the  backend  as  cookies:
+
+app.post('/auth', (req, res) => {
+         res.cookie('access_token', req.body.access_token, {
+                 httpOnly: true,
+                 maxAge: req.body.expires_in * 1000
+         });
+         res.cookie('id_token', req.body.id_token, {
+                 maxAge: req.body.expires_in * 1000
+         });
+res.redirect('/');
+});
+
+(iv)	The  audience  claim  must  match  the  one  setup  for  your  API  endpoint  using  the  Auth0  dashboard.
+
+
+
+
+
+4.	Guarding  Company  Resources  
+
+a)	Some  companies  use  tokens (JWTs)  to  access  resources  through  a  centralised  authentication  and  authorisation  controlled  server,  where:
+(i)	The  user  attempts  to  access  a  resource  controlled  by  a  server.
+(ii)	The  server  redirects  the  user  to  the  authorisation  server,  which  then  is  configured  to  let  the  user  log-in  using  credentials  managed  by  an  identity  provider.
+(iii)	The  user  logs – in   successfully  and  gets  redirected  to  the  authorization  server.
+(iv)	The  user  then  gets  redirected  to  the  resource  server  by  the  authorisation  server.
+(v)	The  user  gets  access  to  the  resource  successfully 
+
+b)	Credentials  returned  from  the  authorization  server  to  the  user  can  be  encoded  as  a  JWT.
+
+c)	The  authorization  server  can  be  said  to  be  providing  a  unified  interface,  and  a  unified  data (the  JWT)  to  the  user.  
+
+
+
+
+
+
+
+
+
+5.	 Access  and  Refresh  Tokens
+
+5.1	Access  tokens  are  tokens  that  give  those  who  have  them  access  to  protected  resources.
+a)	These  tokens:
+(i)	Are  usually  short  lived,  and  may  have  an  expiration  date  embedded  in them.
+
+(ii)	May  carry  additional  information  such  as  an  IP  address  from  which  requests  are  allowed.
+
+b)	Signed  JWTs  make  good  access  tokens,  as  they  can  encode  all  the  necessary  data  to  differentiate  access levels  to  a  resource,  can:
+
+(i)	       carry  an  expiration  date,  and  
+
+(ii)	       Are  signed  to  avoid  validation  queries
+                  against  the  authorization  server.
+
+5.2	Refresh  Tokens  allow  clients  to  request  new  access  tokens:
+a)	After  an  access  token  has  expired,  a  client  may  perform  a  request  for  a  new  access  token  to  the  authorization  server.
+
+b)	Refresh  tokens  are:  
+(i)	usually  long-lived.
+
+(ii)	require  access  to  the  authorization  server,    
+
+(iii)	and  there  is  no  need  for  the  token  to  carry  a  payload.  
+
+5.3	Guarding  Protected  Resources 
+
+const auth0 = new window.auth0.WebAuth({
+   domain:  domain,
+   clientID:  clientId,
+   audience:  'app1.com/protected',
+   scope:  'openid profile purchase',
+   responseType:  'id_token token',
+   redirectUri:  'http://app1.com:3000/auth/',
+   responseMode:  'form_post'
+});
+
+// (...)
+
+$('#login-button').on('click', function(event) {
+       auth0.authorize({
+    prompt: 'none'
+       });
+});
+
+a)	the  above  login  code  show  that  the  user  has  already  given  authorization  for  an  app  to  use  his  or  her  credentials  for   access  to  a  protected  resource.
+b)	It  therefore  looks  to  the  user  as  if  he  were  already  logged-in  in  the  app.
+c)	Once  the  user  has  logged  out  of  the  above  app,  and  immediately  tries  to  log  in  again,  he  or  she  will  not  be  able  to  login  again  to  access  a  protected  resource,  unless  they  request  a  new  access  token  from  an  authorisation  server.    
+
+6.	  JSON  Web  Tokens (JWTs)
+
+a)	All  JWTs  are  constructed  from  three  different  elements:
+(i)	The  header
+(ii)	The  payload
+(iii)	The  signature (encrypted  data)
+
+b)	The  first  two  elements  are  JSON  objects,  and  the  third  element  is  dependent  on  the  algorithm  for  signing  or  encryption,  and,  in  cases  of  unencryption  JWTs  it  is  omitted.
+
+c)	JWTs  can  be  encoded  in  a  compact  representation  known  as  JWS/ JWE  Compact  Serialization.
+
+d)	The compact  serialization  is  a  Base64  URL-safe  encoding  of  the  UTF-8  bytes  of  the  first  two  JSON  elements  (the header and the payload).
+
+e)	These three elements are separated by dots (“.”):
+
+         	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.
+         	eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.
+         	TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ
+
+
+
+f)	The  decoded  header:
+
+{
+"alg": "HS256",
+"typ": "JWT"
+}
+
+g)	The decoded payload is:
+
+{
+"sub": "1234567890",
+"name": "John Doe",
+"admin": true
+}
+
+
+h)	And the secret required for verifying the signature is secret.
+
+
+7.	 Prevent  Privileged  Malicious  Attack!
+
+a)	“alg”: “none”  Attack:
+(i)	Report  the  “alg”: “none”  as  invalid  in  the  company  claims  library.
+(ii)	Check  the  algorithm  specified  in  the  header    before  attempting  to  verify  the  token.
+(iii)	Use  libraries  that  require  the  verification  algorithm  as  an  input  to  the  verification  function,  rather  than  rely  on  the  alg  claim.
+
+b)	RS256  Public – Key  as  HS256  Secret  Attack:
+(i)	Pass  an  explicit  algorithm  to  the  jwtDecode  function,
+(ii)	Check  the  alg  claim,  or  
+(iii)	Use  APIs  that  separate  the  public – key algorithm  from  shared  secret algorithms.
+
+c)	Avoid  Weak  HMAC  Keys
+(i)	NB:  “A  key  of  the  same  size  as  the  hash  output (for  instance  256  bits  for  “HS256”)  or  longer  MUST  be  used  with  this  algorithm.” 
+(ii)	Because  many  passwords  are  simply  not  good  enough  for  use  with  HMAC  signed  JWTs.
+(iii)	Finally  ensure  that  all  your  HMAC  signed  JWTs  HS256  shared  secrets  are  either  the  same  size  or  longer.
